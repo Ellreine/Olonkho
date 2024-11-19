@@ -1,0 +1,136 @@
+using System.Collections;
+using UnityEngine;
+
+public class AttackEffect : MonoBehaviour
+{
+    public int[] combination;
+    [SerializeField] private int damage;
+    [SerializeField] private bool sleeper;
+    [SerializeField] private bool immortal;
+    [SerializeField] private bool heal;
+    [SerializeField] private bool speeder;
+    [SerializeField] private bool quaker;
+    [SerializeField] private bool feather;
+    [SerializeField] private int jumpEffect;
+    [SerializeField] private int fastEffect;
+    [SerializeField] private float effectTimer;
+    [SerializeField] private Projectile attackProjectile;
+    [SerializeField] private Quaker shaker;
+    [SerializeField] private float ammountOfHeal;
+    [SerializeField] private Health player;
+    [SerializeField] private float CDTimer;
+    [SerializeField] private bool onCD;
+    [SerializeField] private Sprite spellIcon;
+
+    [SerializeField] private AudioClip[] CastSound;
+
+    [SerializeField] private GameObject castParticles;
+    
+    public bool ReturnCombination(string combinatio)
+    {
+        string test = null;
+        for (int i = 0; i < combination.Length; i++)
+        {
+            test += combination[i].ToString();
+        }
+        Debug.Log("test "+ test);
+        return test == combinatio;
+    }
+
+    public void ActivateAttack()
+    {
+        //SoundHolder.Instance.PlaySound(CastSound);
+        if (!onCD)
+        {
+            if (sleeper)
+            {
+                // make sleepAttack
+                return;
+            }
+            else if (heal)
+            {
+                SoundHolder.Instance.PlaySound(SoundHolder.Instance.HealSpell);
+                StartCoroutine(Shield());
+                player.AddHealth(ammountOfHeal);
+            }
+            else if (immortal)
+            {
+                SoundHolder.Instance.PlaySound(SoundHolder.Instance.ShieldSpell);
+                StartCoroutine(Shield());
+                player.MakeImmortal(effectTimer);
+            }
+            else if (quaker)
+            {
+                Quaker quake = Instantiate(shaker, transform.position, transform.rotation);
+                StartCoroutine(QuakeTimer(quake.gameObject));
+                StartCoroutine(Earthquake());
+
+            }
+            else if(speeder)
+            {
+                SoundHolder.Instance.PlaySound(SoundHolder.Instance.SpeedSpell);
+                StartCoroutine(SpeedEffect());
+
+            }
+            else if (feather)
+            {
+                SoundHolder.Instance.PlaySound(SoundHolder.Instance.JumpSpell);
+                StartCoroutine(JumpEffect());
+            }
+            else
+            {
+                SoundHolder.Instance.PlaySound(SoundHolder.Instance.FireSpell);
+                Projectile ammunition = Instantiate(attackProjectile, transform.position, transform.rotation);
+
+                ammunition.Damage = damage;
+                ammunition.Fire();
+            }
+            onCD = true;
+            BuffsImage.instance.ActivateBuff(spellIcon, CDTimer);
+            StartCoroutine(CD());
+        }
+    }
+
+    private IEnumerator Earthquake()
+    {
+        Debug.Log("CamShake");
+        yield return new WaitForSeconds(effectTimer);
+        Debug.Log("StopCam");
+    }
+
+    private IEnumerator CD()
+    {
+        yield return new WaitForSeconds(CDTimer);
+        onCD = false;
+    }
+
+    private IEnumerator QuakeTimer(GameObject quaker)
+    {
+        yield return new WaitForSeconds(0.5f);
+        Destroy(quaker);
+    }
+
+    private IEnumerator SpeedEffect()
+    {
+        player.GetComponent<PlayerMovement>().ChangeSpeed(fastEffect);
+        castParticles.SetActive(true);
+        yield return new WaitForSeconds(effectTimer);
+        player.GetComponent<PlayerMovement>().ChangeSpeed(-fastEffect);
+        castParticles.SetActive(false);
+    }
+
+    private IEnumerator JumpEffect()
+    {
+        player.GetComponent<PlayerMovement>().ChangeJump(jumpEffect);
+        yield return new WaitForSeconds(effectTimer);
+        player.GetComponent<PlayerMovement>().ChangeJump(-jumpEffect);
+    }
+
+    private IEnumerator Shield()
+    {
+        castParticles.SetActive(true);
+        yield return new WaitForSeconds(effectTimer);
+        castParticles.SetActive(false);
+    }
+
+}
